@@ -77,7 +77,7 @@ export default function CustomerDetail() {
     navigate("/customers");
   };
 
-  const totalPurchase = orders.reduce((sum, o) => sum + (o.amount || 0), 0);
+  const totalPurchase = orders.reduce((sum, o) => sum + (o.order_total || o.amount || 0), 0);
 
   if (loading) {
     return (

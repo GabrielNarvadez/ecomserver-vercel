@@ -23,14 +23,16 @@ export default function OrderDetail() {
     order_product: "", order_quantity: 1, amount: 0, order_type: "", sales_count: 0,
     order_source: "", team_department: "", order_status: "On Going",
     agent_name: "", agent_facebook: "", agent_notes: "", admin_notes: "",
-    assigned_agent: "", customer_id: "", edit_history: [],
+    assigned_agent: "", customer_id: "", edit_history: [], admin_name: "",
   });
   const [user, setUser] = useState(null);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser);
+    base44.entities.Product.list("-created_date", 500).then(setProducts);
     if (!isNew) {
       base44.entities.Order.filter({ id }).then(data => {
         if (data.length > 0) setForm(data[0]);
@@ -44,10 +46,25 @@ export default function OrderDetail() {
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }));
 
   const handleSave = async () => {
+    // Validation
+    if (!form.customer_name?.trim()) { toast.error("Customer Name is required"); return; }
+    if (!form.contact_number?.trim()) { toast.error("Contact Number is required"); return; }
+    if (!form.order_product?.trim()) { toast.error("Order Product is required"); return; }
+    if (!form.order_quantity || form.order_quantity < 1) { toast.error("Order Quantity is required"); return; }
+    if (!form.order_source) { toast.error("Order Source is required"); return; }
+
+    // Calculate order_total
+    const matchedProduct = products.find(p => p.product_name?.toLowerCase() === form.order_product?.toLowerCase());
+    const order_total = matchedProduct?.price
+      ? (form.order_quantity || 1) * matchedProduct.price
+      : (form.amount || 0);
+
     setSaving(true);
     const payload = {
       ...form,
+      order_total,
       last_updated_by: user?.full_name || user?.email,
+      admin_name: isAdmin ? (user?.full_name || user?.email) : (form.admin_name || ""),
       edit_history: [
         ...(form.edit_history || []),
         { updated_by: user?.full_name || user?.email, updated_at: new Date().toISOString(), field: "saved", old_value: "", new_value: "" }
@@ -168,6 +185,7 @@ export default function OrderDetail() {
             <Field label="Agent Name" value={form.agent_name} onChange={v => set("agent_name", v)} />
             <Field label="Agent Facebook" value={form.agent_facebook} onChange={v => set("agent_facebook", v)} />
             <Field label="Assigned Agent" value={form.assigned_agent} onChange={v => set("assigned_agent", v)} disabled={!isAdmin} />
+            {isAdmin && <Field label="Admin Name" value={form.admin_name} onChange={v => set("admin_name", v)} />}
           </div>
         </Section>
 
