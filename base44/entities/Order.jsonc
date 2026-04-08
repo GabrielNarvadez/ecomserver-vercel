@@ -1,0 +1,150 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "title": "Customer ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "title": "Customer Name"
+    },
+    "contact_number": {
+      "type": "string",
+      "title": "Contact Number"
+    },
+    "complete_address": {
+      "type": "string",
+      "title": "Complete Address"
+    },
+    "landmark": {
+      "type": "string",
+      "title": "Landmark"
+    },
+    "facebook_link": {
+      "type": "string",
+      "title": "Facebook Link"
+    },
+    "facebook_page": {
+      "type": "string",
+      "title": "Facebook Page"
+    },
+    "order_day": {
+      "type": "string",
+      "title": "Order Day",
+      "format": "date"
+    },
+    "order_product": {
+      "type": "string",
+      "title": "Order Product"
+    },
+    "order_quantity": {
+      "type": "number",
+      "title": "Order Quantity"
+    },
+    "amount": {
+      "type": "number",
+      "title": "Amount to Pay"
+    },
+    "order_type": {
+      "type": "string",
+      "title": "Order Type"
+    },
+    "sales_count": {
+      "type": "number",
+      "title": "Sales Count"
+    },
+    "order_source": {
+      "type": "string",
+      "title": "Order Source",
+      "enum": [
+        "JNT",
+        "LBC",
+        "Rider",
+        "Abandoned",
+        "Upsell",
+        "TikTok",
+        "Chat Support",
+        "Shopee"
+      ]
+    },
+    "team_department": {
+      "type": "string",
+      "title": "Team Department",
+      "enum": [
+        "Webcake 1",
+        "Webcake 2",
+        "Re-Order",
+        "TikTok",
+        "Legal"
+      ]
+    },
+    "order_status": {
+      "type": "string",
+      "title": "Order Status",
+      "enum": [
+        "On Going",
+        "Delivered",
+        "RTS",
+        "Cancel",
+        "Waiting Encashment",
+        "Paid Penalty Cancel",
+        "Paid Penalty RTS",
+        "Reship"
+      ]
+    },
+    "assigned_agent": {
+      "type": "string",
+      "title": "Assigned Agent"
+    },
+    "agent_name": {
+      "type": "string",
+      "title": "Agent Name"
+    },
+    "agent_facebook": {
+      "type": "string",
+      "title": "Agent Facebook Account"
+    },
+    "agent_notes": {
+      "type": "string",
+      "title": "Agent Notes"
+    },
+    "admin_notes": {
+      "type": "string",
+      "title": "Admin Notes"
+    },
+    "edit_history": {
+      "type": "array",
+      "title": "Edit History",
+      "items": {
+        "type": "object",
+        "properties": {
+          "updated_by": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "old_value": {
+            "type": "string"
+          },
+          "new_value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "last_updated_by": {
+      "type": "string",
+      "title": "Last Updated By"
+    }
+  },
+  "required": [
+    "customer_name",
+    "order_status"
+  ]
+}

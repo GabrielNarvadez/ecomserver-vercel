@@ -5,7 +5,15 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-// Add page imports here
+import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
+import Customers from './pages/Customers';
+import CustomerDetail from './pages/CustomerDetail';
+import Products from './pages/Products';
+import Reports from './pages/Reports';
+import SettingsPage from './pages/SettingsPage';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -33,8 +41,17 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
-      <Route path="*" element={<PageNotFound />} />
+      <Route element={<Layout />}>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/orders/:id" element={<OrderDetail />} />
+        <Route path="/customers" element={<Customers />} />
+        <Route path="/customers/:id" element={<CustomerDetail />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Route>
     </Routes>
   );
 };

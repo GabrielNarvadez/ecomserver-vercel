@@ -1,0 +1,40 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Name"
+    },
+    "contact_number": {
+      "type": "string",
+      "title": "Contact Number"
+    },
+    "complete_address": {
+      "type": "string",
+      "title": "Complete Address"
+    },
+    "landmark": {
+      "type": "string",
+      "title": "Landmark"
+    },
+    "facebook_link": {
+      "type": "string",
+      "title": "Facebook Link"
+    },
+    "facebook_page": {
+      "type": "string",
+      "title": "Facebook Page"
+    },
+    "tags": {
+      "type": "array",
+      "title": "Tags",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

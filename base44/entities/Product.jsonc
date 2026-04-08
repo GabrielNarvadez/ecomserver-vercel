@@ -1,0 +1,29 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "product_name": {
+      "type": "string",
+      "title": "Product Name"
+    },
+    "sku": {
+      "type": "string",
+      "title": "SKU"
+    },
+    "price": {
+      "type": "number",
+      "title": "Price"
+    },
+    "status": {
+      "type": "string",
+      "title": "Status",
+      "enum": [
+        "Active",
+        "Inactive"
+      ]
+    }
+  },
+  "required": [
+    "product_name"
+  ]
+}
