@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Upload } from "lucide-react";
+import CsvImport from "../components/CsvImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,17 +13,18 @@ export default function Customers() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [importOpen, setImportOpen] = useState(false);
 
-  useEffect(() => {
-    Promise.all([
-      base44.entities.Customer.list("-created_date", 500),
-      base44.entities.Order.list("-created_date", 500),
-    ]).then(([c, o]) => {
-      setCustomers(c);
-      setOrders(o);
-      setLoading(false);
-    });
-  }, []);
+  const load = () => Promise.all([
+    base44.entities.Customer.list("-created_date", 500),
+    base44.entities.Order.list("-created_date", 500),
+  ]).then(([c, o]) => {
+    setCustomers(c);
+    setOrders(o);
+    setLoading(false);
+  });
+
+  useEffect(() => { load(); }, []);
 
   const customerData = useMemo(() => {
     return customers.map(c => {
@@ -55,12 +57,30 @@ export default function Customers() {
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <PageHeader title="Customers" description={`${filtered.length} customers`}>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setImportOpen(true)}>
+          <Upload className="h-4 w-4" /> Import CSV
+        </Button>
         <Link to="/customers/new">
           <Button size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" /> New Customer
           </Button>
         </Link>
       </PageHeader>
+      <CsvImport
+        open={importOpen}
+        onClose={() => { setImportOpen(false); load(); }}
+        entityName="Customer"
+        fields={[
+          { key: "name", label: "Name", required: true },
+          { key: "contact_number", label: "Contact Number" },
+          { key: "complete_address", label: "Complete Address" },
+          { key: "landmark", label: "Landmark" },
+          { key: "facebook_link", label: "Facebook Link" },
+          { key: "facebook_page", label: "Facebook Page" },
+        ]}
+        sampleHeaders={["name","contact_number","complete_address","landmark","facebook_link","facebook_page"]}
+        onImport={record => base44.entities.Customer.create(record)}
+      />
 
       <div className="relative mb-4 max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

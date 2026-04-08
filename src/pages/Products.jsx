@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload } from "lucide-react";
+import CsvImport from "../components/CsvImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ product_name: "", sku: "", price: 0, status: "Active" });
 
@@ -55,10 +57,26 @@ export default function Products() {
   return (
     <div className="p-4 sm:p-6 max-w-5xl mx-auto">
       <PageHeader title="Products" description={`${products.length} products`}>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setImportOpen(true)}>
+          <Upload className="h-4 w-4" /> Import CSV
+        </Button>
         <Button size="sm" className="gap-1.5" onClick={openNew}>
           <Plus className="h-4 w-4" /> New Product
         </Button>
       </PageHeader>
+      <CsvImport
+        open={importOpen}
+        onClose={() => { setImportOpen(false); load(); }}
+        entityName="Product"
+        fields={[
+          { key: "product_name", label: "Product Name", required: true },
+          { key: "sku", label: "SKU" },
+          { key: "price", label: "Price" },
+          { key: "status", label: "Status" },
+        ]}
+        sampleHeaders={["product_name","sku","price","status"]}
+        onImport={record => base44.entities.Product.create({ ...record, price: Number(record.price) || 0, status: record.status || "Active" })}
+      />
 
       <div className="bg-card rounded-xl border overflow-hidden">
         <div className="overflow-x-auto">
