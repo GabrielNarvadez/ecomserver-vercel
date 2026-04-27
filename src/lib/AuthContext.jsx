@@ -1,80 +1,33 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { supabase, base44 } from '@/api/base44Client';
+import React, { createContext, useContext } from 'react';
+
+// AUTH DISABLED — app is wide open. Re-enable by reverting this file
+// and re-running supabase/schema.sql (which restores RLS).
+const FAKE_USER = {
+  id: '00000000-0000-0000-0000-000000000000',
+  email: 'demo@local',
+  full_name: 'Demo Admin',
+  role: 'admin'
+};
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings] = useState(false);
-  const [authError, setAuthError] = useState(null);
-  const [appPublicSettings] = useState(null);
-
-  const refreshUser = async () => {
-    try {
-      const me = await base44.auth.me();
-      setUser(me);
-      setIsAuthenticated(true);
-      setAuthError(null);
-    } catch (err) {
-      setUser(null);
-      setIsAuthenticated(false);
-      if (err.status === 401) {
-        setAuthError({ type: 'auth_required', message: 'Authentication required' });
-      } else {
-        setAuthError({ type: 'unknown', message: err.message });
-      }
-    } finally {
-      setIsLoadingAuth(false);
-    }
+  const value = {
+    user: FAKE_USER,
+    isAuthenticated: true,
+    isLoadingAuth: false,
+    isLoadingPublicSettings: false,
+    authError: null,
+    appPublicSettings: null,
+    logout: () => {},
+    navigateToLogin: () => {},
+    checkAppState: () => {}
   };
-
-  useEffect(() => {
-    refreshUser();
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) refreshUser();
-      else {
-        setUser(null);
-        setIsAuthenticated(false);
-        setIsLoadingAuth(false);
-      }
-    });
-    return () => sub?.subscription?.unsubscribe();
-  }, []);
-
-  const logout = async (shouldRedirect = true) => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setIsAuthenticated(false);
-    if (shouldRedirect) window.location.href = '/login';
-  };
-
-  const navigateToLogin = () => {
-    window.location.href = '/login';
-  };
-
-  return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated,
-      isLoadingAuth,
-      isLoadingPublicSettings,
-      authError,
-      appPublicSettings,
-      logout,
-      navigateToLogin,
-      checkAppState: refreshUser
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
