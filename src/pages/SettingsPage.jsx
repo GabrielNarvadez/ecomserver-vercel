@@ -21,6 +21,8 @@ export default function SettingsPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("agent");
+  const [invitePassword, setInvitePassword] = useState("");
+  const [inviteMode, setInviteMode] = useState("password"); // 'password' | 'magic'
   const [inviting, setInviting] = useState(false);
 
   // Edit dialog
@@ -50,14 +52,34 @@ export default function SettingsPage() {
   // Invite
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return toast.error("Please enter an email");
+    if (inviteMode === "password") {
+      if (!invitePassword || invitePassword.length < 6) {
+        return toast.error("Password must be at least 6 characters");
+      }
+    }
     setInviting(true);
-    await base44.users.inviteUser(inviteEmail.trim(), inviteRole);
-    toast.success(`Invitation sent to ${inviteEmail}`);
-    setInviteEmail("");
-    setInviteRole("agent");
-    setInviteOpen(false);
-    setInviting(false);
-    await loadUsers();
+    try {
+      await base44.users.inviteUser(
+        inviteEmail.trim(),
+        inviteRole,
+        inviteMode === "password" ? invitePassword : null
+      );
+      toast.success(
+        inviteMode === "password"
+          ? `Account created for ${inviteEmail}`
+          : `Invitation sent to ${inviteEmail}`
+      );
+      setInviteEmail("");
+      setInviteRole("agent");
+      setInvitePassword("");
+      setInviteMode("password");
+      setInviteOpen(false);
+      await loadUsers();
+    } catch (err) {
+      toast.error(err.message || "Invite failed");
+    } finally {
+      setInviting(false);
+    }
   };
 
   // Edit role
@@ -199,7 +221,6 @@ export default function SettingsPage() {
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
                 className="h-9"
-                onKeyDown={e => e.key === "Enter" && handleInvite()}
               />
             </div>
             <div>
@@ -212,8 +233,33 @@ export default function SettingsPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Invite Method</Label>
+              <Select value={inviteMode} onValueChange={setInviteMode}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="password">Set initial password (no email)</SelectItem>
+                  <SelectItem value="magic">Email magic link invite</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {inviteMode === "password" && (
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Initial Password</Label>
+                <Input
+                  type="text"
+                  placeholder="At least 6 characters"
+                  value={invitePassword}
+                  onChange={e => setInvitePassword(e.target.value)}
+                  className="h-9"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Share this with the user. They can change it later.</p>
+              </div>
+            )}
             <Button onClick={handleInvite} disabled={inviting} className="w-full">
-              {inviting ? "Sending..." : "Send Invitation"}
+              {inviting
+                ? (inviteMode === "password" ? "Creating..." : "Sending...")
+                : (inviteMode === "password" ? "Create Account" : "Send Invitation")}
             </Button>
           </div>
         </DialogContent>

@@ -19,11 +19,14 @@ export default function OrderDetail() {
   const isNew = id === "new";
   const [form, setForm] = useState({
     customer_name: "", contact_number: "", complete_address: "", landmark: "",
-    facebook_link: "", facebook_page: "", order_day: new Date().toISOString().split("T")[0],
-    order_product: "", order_quantity: 1, amount: 0, order_type: "", sales_count: 0,
-    order_source: "", team_department: "", order_status: "On Going",
+    facebook_link: "", facebook_page: "",
+    order_day: new Date().toISOString().split("T")[0],
+    ship_out_day: "",
+    order_product: "", order_quantity: 1, amount: 0, order_type: "",
+    order_source: "", team_department: "", order_status: "NEW",
     agent_name: "", agent_facebook: "", agent_notes: "", admin_notes: "",
-    assigned_agent: "", customer_id: "", edit_history: [], admin_name: "",
+    q_a_notes: "",
+    customer_id: "", edit_history: [], admin_name: "",
   });
   const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
@@ -46,14 +49,12 @@ export default function OrderDetail() {
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }));
 
   const handleSave = async () => {
-    // Validation
     if (!form.customer_name?.trim()) { toast.error("Customer Name is required"); return; }
     if (!form.contact_number?.trim()) { toast.error("Contact Number is required"); return; }
     if (!form.order_product?.trim()) { toast.error("Order Product is required"); return; }
     if (!form.order_quantity || form.order_quantity < 1) { toast.error("Order Quantity is required"); return; }
     if (!form.order_source) { toast.error("Order Source is required"); return; }
 
-    // Calculate order_total
     const matchedProduct = products.find(p => p.product_name?.toLowerCase() === form.order_product?.toLowerCase());
     const order_total = matchedProduct?.price
       ? (form.order_quantity || 1) * matchedProduct.price
@@ -70,6 +71,7 @@ export default function OrderDetail() {
         { updated_by: user?.full_name || user?.email, updated_at: new Date().toISOString(), field: "saved", old_value: "", new_value: "" }
       ]
     };
+    if (!payload.ship_out_day) payload.ship_out_day = null;
     delete payload.id;
     delete payload.created_date;
     delete payload.updated_date;
@@ -139,11 +141,11 @@ export default function OrderDetail() {
         <Section title="Order Details">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Field label="Order Day" type="date" value={form.order_day} onChange={v => set("order_day", v)} />
+            <Field label="Ship Out Day" type="date" value={form.ship_out_day} onChange={v => set("ship_out_day", v)} />
             <Field label="Product" value={form.order_product} onChange={v => set("order_product", v)} />
             <Field label="Quantity" type="number" value={form.order_quantity} onChange={v => set("order_quantity", Number(v))} />
             <Field label="Amount (₱)" type="number" value={form.amount} onChange={v => set("amount", Number(v))} />
             <Field label="Order Type" value={form.order_type} onChange={v => set("order_type", v)} />
-            <Field label="Sales Count" type="number" value={form.sales_count} onChange={v => set("sales_count", Number(v))} />
 
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Order Source</Label>
@@ -169,7 +171,7 @@ export default function OrderDetail() {
 
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Order Status</Label>
-              <Select value={form.order_status || "On Going"} onValueChange={v => set("order_status", v)} disabled={!isAdmin && !isNew}>
+              <Select value={form.order_status || "NEW"} onValueChange={v => set("order_status", v)} disabled={!isAdmin && !isNew}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ORDER_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.value}</SelectItem>)}
@@ -184,7 +186,6 @@ export default function OrderDetail() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Agent Name" value={form.agent_name} onChange={v => set("agent_name", v)} />
             <Field label="Agent Facebook" value={form.agent_facebook} onChange={v => set("agent_facebook", v)} />
-            <Field label="Assigned Agent" value={form.assigned_agent} onChange={v => set("assigned_agent", v)} disabled={!isAdmin} />
             {isAdmin && <Field label="Admin Name" value={form.admin_name} onChange={v => set("admin_name", v)} />}
           </div>
         </Section>
@@ -208,6 +209,16 @@ export default function OrderDetail() {
                 onChange={e => set("admin_notes", e.target.value)}
                 rows={3}
                 placeholder="Add admin notes..."
+                disabled={!isAdmin}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Q.A Notes {!isAdmin && "(Admin only)"}</Label>
+              <Textarea
+                value={form.q_a_notes || ""}
+                onChange={e => set("q_a_notes", e.target.value)}
+                rows={3}
+                placeholder="Add Q.A notes..."
                 disabled={!isAdmin}
               />
             </div>

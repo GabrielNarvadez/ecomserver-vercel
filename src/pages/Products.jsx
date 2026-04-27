@@ -12,20 +12,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import PageHeader from "../components/PageHeader";
 import { toast } from "sonner";
 
+const blankForm = { product_name: "", sku: "", price: 0, stocks: 0, status: "Active" };
+
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ product_name: "", sku: "", price: 0, status: "Active" });
+  const [form, setForm] = useState(blankForm);
 
   const load = () => base44.entities.Product.list("-created_date", 500).then(data => { setProducts(data); setLoading(false); });
 
   useEffect(() => { load(); }, []);
 
-  const openNew = () => { setEditing(null); setForm({ product_name: "", sku: "", price: 0, status: "Active" }); setDialogOpen(true); };
-  const openEdit = (p) => { setEditing(p); setForm({ product_name: p.product_name, sku: p.sku, price: p.price, status: p.status }); setDialogOpen(true); };
+  const openNew = () => { setEditing(null); setForm(blankForm); setDialogOpen(true); };
+  const openEdit = (p) => {
+    setEditing(p);
+    setForm({ product_name: p.product_name, sku: p.sku, price: p.price, stocks: p.stocks ?? 0, status: p.status });
+    setDialogOpen(true);
+  };
 
   const handleSave = async () => {
     if (editing) {
@@ -36,6 +42,14 @@ export default function Products() {
       toast.success("Product created");
     }
     setDialogOpen(false);
+    load();
+  };
+
+  const handleStocksChange = async (p, newStocks) => {
+    const stocks = Number(newStocks);
+    if (Number.isNaN(stocks) || stocks === p.stocks) return;
+    await base44.entities.Product.update(p.id, { stocks });
+    toast.success(`Stocks updated for ${p.product_name}`);
     load();
   };
 
@@ -72,10 +86,16 @@ export default function Products() {
           { key: "product_name", label: "Product Name", required: true },
           { key: "sku", label: "SKU" },
           { key: "price", label: "Price" },
+          { key: "stocks", label: "Stocks" },
           { key: "status", label: "Status" },
         ]}
-        sampleHeaders={["product_name","sku","price","status"]}
-        onImport={record => base44.entities.Product.create({ ...record, price: Number(record.price) || 0, status: record.status || "Active" })}
+        sampleHeaders={["product_name","sku","price","stocks","status"]}
+        onImport={record => base44.entities.Product.create({
+          ...record,
+          price: Number(record.price) || 0,
+          stocks: Number(record.stocks) || 0,
+          status: record.status || "Active"
+        })}
       />
 
       <div className="bg-card rounded-xl border overflow-hidden">
@@ -86,6 +106,7 @@ export default function Products() {
                 <TableHead>Product Name</TableHead>
                 <TableHead>SKU</TableHead>
                 <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-right">Stocks</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -93,7 +114,7 @@ export default function Products() {
             <TableBody>
               {products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-12">No products</TableCell>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12">No products</TableCell>
                 </TableRow>
               ) : (
                 products.map(p => (
@@ -101,6 +122,15 @@ export default function Products() {
                     <TableCell className="font-medium">{p.product_name}</TableCell>
                     <TableCell className="text-muted-foreground font-mono text-xs">{p.sku}</TableCell>
                     <TableCell className="text-right font-medium">₱{(p.price || 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        type="number"
+                        defaultValue={p.stocks ?? 0}
+                        onBlur={(e) => handleStocksChange(p, e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
+                        className="h-8 w-20 ml-auto text-right"
+                      />
+                    </TableCell>
                     <TableCell>
                       <Badge variant={p.status === "Active" ? "default" : "secondary"}>
                         {p.status}
@@ -139,9 +169,15 @@ export default function Products() {
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">SKU</Label>
               <Input value={form.sku} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} className="h-9" />
             </div>
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Price (₱)</Label>
-              <Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} className="h-9" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Price (₱)</Label>
+                <Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} className="h-9" />
+              </div>
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Stocks</Label>
+                <Input type="number" value={form.stocks} onChange={e => setForm(f => ({ ...f, stocks: Number(e.target.value) }))} className="h-9" />
+              </div>
             </div>
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</Label>

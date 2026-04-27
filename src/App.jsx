@@ -8,8 +8,6 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
-import Customers from './pages/Customers';
-import CustomerDetail from './pages/CustomerDetail';
 import Products from './pages/Products';
 import Reports from './pages/Reports';
 import SettingsPage from './pages/SettingsPage';
@@ -39,8 +37,6 @@ const AppRoutes = () => (
       <Route path="/" element={<Dashboard />} />
       <Route path="/orders" element={<Orders />} />
       <Route path="/orders/:id" element={<OrderDetail />} />
-      <Route path="/customers" element={<Customers />} />
-      <Route path="/customers/:id" element={<CustomerDetail />} />
       <Route path="/products" element={<Products />} />
       <Route path="/reports" element={<Reports />} />
       <Route path="/settings" element={<SettingsPage />} />

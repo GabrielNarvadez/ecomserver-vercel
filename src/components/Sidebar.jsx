@@ -1,12 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, ShoppingCart, Users, Package, BarChart3, Settings, X, LogOut } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, BarChart3, Settings, X, LogOut } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
 { to: "/", icon: LayoutDashboard, label: "Dashboard" },
 { to: "/orders", icon: ShoppingCart, label: "Orders" },
-{ to: "/customers", icon: Users, label: "Customers" },
 { to: "/products", icon: Package, label: "Products" },
 { to: "/reports", icon: BarChart3, label: "Reports" },
 { to: "/settings", icon: Settings, label: "Settings" }];

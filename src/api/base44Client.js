@@ -103,8 +103,9 @@ const auth = {
 };
 
 const users = {
-  // Calls our Vercel serverless function (which uses the service role key server-side).
-  async inviteUser(email, role) {
+  // Pass `password` to create the user immediately with that password instead
+  // of sending a magic-link invite.
+  async inviteUser(email, role, password = null) {
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch('/api/invite', {
       method: 'POST',
@@ -112,7 +113,7 @@ const users = {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session?.access_token || ''}`
       },
-      body: JSON.stringify({ email, role })
+      body: JSON.stringify({ email, role, password })
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));

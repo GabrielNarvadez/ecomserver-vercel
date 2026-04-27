@@ -1,4 +1,5 @@
 export const ORDER_STATUSES = [
+  { value: "NEW", bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300" },
   { value: "On Going", bg: "bg-cyan-100", text: "text-cyan-700", border: "border-cyan-300" },
   { value: "Delivered", bg: "bg-green-100", text: "text-green-700", border: "border-green-300" },
   { value: "RTS", bg: "bg-pink-100", text: "text-pink-700", border: "border-pink-300" },
@@ -10,7 +11,7 @@ export const ORDER_STATUSES = [
 ];
 
 export const ORDER_SOURCES = ["JNT", "LBC", "Rider", "Abandoned", "Upsell", "TikTok", "Chat Support", "Shopee"];
-export const TEAM_DEPARTMENTS = ["Webcake 1", "Webcake 2", "Re-Order", "TikTok", "Legal"];
+export const TEAM_DEPARTMENTS = ["Webcake 1", "Webcake 2", "Re-Order", "TikTok", "Legal", "Chat Support"];
 
 export function getStatusStyle(status) {
   const s = ORDER_STATUSES.find(s => s.value === status);
