@@ -70,18 +70,36 @@ const makeEntity = (name) => {
   };
 };
 
-// AUTH DISABLED — see src/lib/AuthContext.jsx for the toggle.
-const FAKE_USER = {
-  id: '00000000-0000-0000-0000-000000000000',
-  email: 'demo@local',
-  full_name: 'Demo Admin',
-  role: 'admin'
-};
-
 const auth = {
-  async me() { return FAKE_USER; },
-  async logout() { /* no-op */ },
-  redirectToLogin() { /* no-op */ }
+  async me() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) {
+      const e = new Error('Not authenticated');
+      e.status = 401;
+      throw e;
+    }
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .maybeSingle();
+    return {
+      id: user.id,
+      email: user.email,
+      full_name: profile?.full_name || user.user_metadata?.full_name || user.email,
+      role: profile?.role || 'agent',
+      ...profile
+    };
+  },
+
+  async logout() {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  },
+
+  redirectToLogin() {
+    window.location.href = '/login';
+  }
 };
 
 const users = {
