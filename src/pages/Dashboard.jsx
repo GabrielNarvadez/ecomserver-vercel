@@ -7,7 +7,8 @@ import StatusBadge from "../components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ORDER_STATUSES, ORDER_SOURCES, TEAM_DEPARTMENTS } from "../lib/statusConfig";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ORDER_STATUSES, ORDER_SOURCES, TEAM_DEPARTMENTS, PAYMENT_MODES } from "../lib/statusConfig";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const PIE_COLORS = ["#06b6d4", "#22c55e", "#ec4899", "#ef4444", "#d946ef", "#9ca3af", "#eab308", "#f97316"];
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const [preset, setPreset] = useState("month");
   const [from, setFrom] = useState(monthStartStr());
   const [to, setTo] = useState(todayStr());
+  const [department, setDepartment] = useState("all");
 
   useEffect(() => {
     base44.entities.Order.list("-created_date", 1000).then(data => {
@@ -63,10 +65,15 @@ export default function Dashboard() {
     return true;
   };
 
-  const filtered = useMemo(() => orders.filter(inRange), [orders, from, to]);
+  const filtered = useMemo(
+    () => orders.filter(o => inRange(o) && (department === "all" || o.team_department === department)),
+    [orders, from, to, department]
+  );
 
   const totalRevenue = filtered.reduce((sum, o) => sum + (o.amount || 0), 0);
-  const todayOrders = orders.filter(o => orderDate(o) === todayStr());
+  const todayOrders = orders
+    .filter(o => orderDate(o) === todayStr())
+    .filter(o => department === "all" || o.team_department === department);
 
   const statusCounts = ORDER_STATUSES.map(s => ({
     name: s.value,
@@ -84,6 +91,13 @@ export default function Dashboard() {
     count: filtered.filter(o => o.team_department === d).length,
   })).filter(d => d.count > 0);
 
+  const paymentCounts = PAYMENT_MODES.map(m => ({
+    name: m,
+    count: filtered.filter(o => o.mode_of_payment === m).length,
+    revenue: filtered.filter(o => o.mode_of_payment === m).reduce((s, o) => s + (o.amount || 0), 0),
+  }));
+  const unpaidCount = filtered.filter(o => !o.mode_of_payment).length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -96,7 +110,7 @@ export default function Dashboard() {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <PageHeader title="Dashboard" description="Overview of your business performance" />
 
-      {/* Date filter */}
+      {/* Filters */}
       <div className="bg-card rounded-xl border p-4 mb-6">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-wrap gap-1.5">
@@ -111,7 +125,17 @@ export default function Dashboard() {
               </Button>
             ))}
           </div>
-          <div className="ml-auto flex items-end gap-2">
+          <div className="ml-auto flex flex-wrap items-end gap-2">
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Department</Label>
+              <Select value={department} onValueChange={setDepartment}>
+                <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {TEAM_DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</Label>
               <Input type="date" value={from} onChange={e => { setFrom(e.target.value); setPreset("custom"); }} className="h-9 w-[150px]" />
@@ -142,6 +166,30 @@ export default function Dashboard() {
               <span className="text-sm font-semibold">{s.count}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Mode of Payment breakdown */}
+      <div className="bg-card rounded-xl border p-5 mb-6">
+        <h3 className="text-sm font-semibold mb-4">Mode of Payment</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {paymentCounts.map(p => (
+            <div key={p.name} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">{p.name}</p>
+                <p className="text-xl font-bold">{p.count}</p>
+              </div>
+              <p className="text-sm font-medium">₱{p.revenue.toLocaleString()}</p>
+            </div>
+          ))}
+          {unpaidCount > 0 && (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Unspecified</p>
+                <p className="text-xl font-bold">{unpaidCount}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

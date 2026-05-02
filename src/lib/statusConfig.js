@@ -12,6 +12,7 @@ export const ORDER_STATUSES = [
 
 export const ORDER_SOURCES = ["JNT", "LBC", "Rider", "Abandoned", "Upsell", "TikTok", "Chat Support", "Shopee"];
 export const TEAM_DEPARTMENTS = ["Webcake 1", "Webcake 2", "Re-Order", "TikTok", "Legal", "Chat Support"];
+export const PAYMENT_MODES = ["COD", "COP"];
 
 export function getStatusStyle(status) {
   const s = ORDER_STATUSES.find(s => s.value === status);

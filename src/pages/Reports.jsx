@@ -4,7 +4,8 @@ import PageHeader from "../components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ORDER_STATUSES, ORDER_SOURCES } from "../lib/statusConfig";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ORDER_STATUSES, ORDER_SOURCES, TEAM_DEPARTMENTS, PAYMENT_MODES } from "../lib/statusConfig";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 const COLORS = ["#3b82f6", "#06b6d4", "#22c55e", "#ec4899", "#ef4444", "#d946ef", "#9ca3af", "#eab308", "#f97316", "#8b5cf6"];
@@ -27,6 +28,7 @@ export default function Reports() {
   const [preset, setPreset] = useState("month");
   const [from, setFrom] = useState(monthStartStr());
   const [to, setTo] = useState(todayStr());
+  const [department, setDepartment] = useState("all");
 
   useEffect(() => {
     base44.entities.Order.list("-created_date", 1000).then(o => {
@@ -52,7 +54,10 @@ export default function Reports() {
     return true;
   };
 
-  const filtered = useMemo(() => orders.filter(inRange), [orders, from, to]);
+  const filtered = useMemo(
+    () => orders.filter(o => inRange(o) && (department === "all" || o.team_department === department)),
+    [orders, from, to, department]
+  );
 
   const totalRevenue = filtered.reduce((s, o) => s + (o.amount || 0), 0);
 
@@ -71,6 +76,15 @@ export default function Reports() {
       count: filtered.filter(o => o.order_source === s).length,
       revenue: filtered.filter(o => o.order_source === s).reduce((sum, o) => sum + (o.amount || 0), 0),
     })).filter(s => s.count > 0),
+    [filtered]
+  );
+
+  const paymentData = useMemo(() =>
+    PAYMENT_MODES.map(m => ({
+      name: m,
+      count: filtered.filter(o => o.mode_of_payment === m).length,
+      revenue: filtered.filter(o => o.mode_of_payment === m).reduce((s, o) => s + (o.amount || 0), 0),
+    })),
     [filtered]
   );
 
@@ -97,7 +111,7 @@ export default function Reports() {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <PageHeader title="Reports" description="Sales and performance analytics" />
 
-      {/* Date filter */}
+      {/* Filters */}
       <div className="bg-card rounded-xl border p-4 mb-6">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-wrap gap-1.5">
@@ -107,7 +121,17 @@ export default function Reports() {
               </Button>
             ))}
           </div>
-          <div className="ml-auto flex items-end gap-2">
+          <div className="ml-auto flex flex-wrap items-end gap-2">
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Department</Label>
+              <Select value={department} onValueChange={setDepartment}>
+                <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {TEAM_DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</Label>
               <Input type="date" value={from} onChange={e => { setFrom(e.target.value); setPreset("custom"); }} className="h-9 w-[150px]" />
@@ -164,6 +188,22 @@ export default function Reports() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      </div>
+
+      {/* Mode of Payment */}
+      <div className="bg-card rounded-xl border p-5 mb-6">
+        <h3 className="text-sm font-semibold mb-4">Revenue by Mode of Payment</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={paymentData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 13% 91%)" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v, name) => name === "revenue" ? `₱${v.toLocaleString()}` : v} />
+              <Bar dataKey="revenue" fill="#22c55e" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 

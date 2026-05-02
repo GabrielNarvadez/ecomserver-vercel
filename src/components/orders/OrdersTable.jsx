@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import StatusBadge from "../StatusBadge";
 import moment from "moment";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const COLUMNS = [
   { field: "order_day",        label: "Date" },
@@ -13,6 +14,7 @@ const COLUMNS = [
   { field: "order_quantity",   label: "Qty",      align: "right" },
   { field: "amount",           label: "Amount",   align: "right" },
   { field: "order_status",     label: "Status" },
+  { field: "mode_of_payment",  label: "Payment" },
   { field: "order_source",     label: "Source" },
   { field: "team_department",  label: "Department" },
   { field: "agent_name",       label: "Agent" },
@@ -23,7 +25,7 @@ const COLUMNS = [
 
 const truncate = (s, n = 40) => (s && s.length > n ? `${s.slice(0, n)}…` : s || "");
 
-export default function OrdersTable({ orders, sortField, sortDir, onSort }) {
+export default function OrdersTable({ orders, sortField, sortDir, onSort, selected, onToggleRow, onToggleAll }) {
   const navigate = useNavigate();
 
   const sortIcon = (field) => {
@@ -36,12 +38,22 @@ export default function OrdersTable({ orders, sortField, sortDir, onSort }) {
     else onSort(field, "desc");
   };
 
+  const allSelected = orders.length > 0 && orders.every(o => selected?.has(o.id));
+  const someSelected = orders.some(o => selected?.has(o.id)) && !allSelected;
+
   return (
     <div className="bg-card rounded-xl border overflow-hidden">
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-secondary/50">
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={() => onToggleAll(orders)}
+                  aria-label="Select all rows"
+                />
+              </TableHead>
               {COLUMNS.map(c => (
                 <TableHead
                   key={c.field}
@@ -56,50 +68,62 @@ export default function OrdersTable({ orders, sortField, sortDir, onSort }) {
           <TableBody>
             {orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={COLUMNS.length} className="text-center text-muted-foreground py-12">
+                <TableCell colSpan={COLUMNS.length + 1} className="text-center text-muted-foreground py-12">
                   No orders found
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map(order => (
-                <TableRow
-                  key={order.id}
-                  className="cursor-pointer hover:bg-accent/40 transition-colors"
-                  onClick={() => navigate(`/orders/${order.id}`)}
-                >
-                  <TableCell className="whitespace-nowrap text-xs">
-                    {order.order_day ? moment(order.order_day).format("MMM D, YYYY") : "-"}
-                  </TableCell>
-                  <TableCell className="font-medium">{order.customer_name}</TableCell>
-                  <TableCell className="text-muted-foreground">{order.contact_number}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs max-w-[180px]" title={order.complete_address}>
-                    {truncate(order.complete_address, 30)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-xs max-w-[140px]">
-                    {order.facebook_link ? (
-                      <a href={order.facebook_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={e => e.stopPropagation()}>
-                        {truncate(order.facebook_link.replace(/^https?:\/\/(www\.)?/, ""), 22)}
-                      </a>
-                    ) : "-"}
-                  </TableCell>
-                  <TableCell>{order.order_product}</TableCell>
-                  <TableCell className="text-right">{order.order_quantity}</TableCell>
-                  <TableCell className="text-right font-medium">₱{(order.amount || 0).toLocaleString()}</TableCell>
-                  <TableCell><StatusBadge status={order.order_status} /></TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{order.order_source}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{order.team_department}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs">{order.agent_name}</TableCell>
-                  <TableCell className="text-muted-foreground text-xs max-w-[160px]" title={order.agent_notes}>
-                    {truncate(order.agent_notes, 30)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-xs max-w-[160px]" title={order.admin_notes}>
-                    {truncate(order.admin_notes, 30)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-xs max-w-[160px]" title={order.q_a_notes}>
-                    {truncate(order.q_a_notes, 30)}
-                  </TableCell>
-                </TableRow>
-              ))
+              orders.map(order => {
+                const isSelected = selected?.has(order.id);
+                return (
+                  <TableRow
+                    key={order.id}
+                    data-state={isSelected ? "selected" : undefined}
+                    className="cursor-pointer hover:bg-accent/40 transition-colors data-[state=selected]:bg-accent/60"
+                    onClick={() => navigate(`/orders/${order.id}`)}
+                  >
+                    <TableCell className="w-10" onClick={e => e.stopPropagation()}>
+                      <Checkbox
+                        checked={isSelected || false}
+                        onCheckedChange={() => onToggleRow(order.id)}
+                        aria-label={`Select order ${order.id}`}
+                      />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">
+                      {order.order_day ? moment(order.order_day).format("MMM D, YYYY") : "-"}
+                    </TableCell>
+                    <TableCell className="font-medium">{order.customer_name}</TableCell>
+                    <TableCell className="text-muted-foreground">{order.contact_number}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs max-w-[180px]" title={order.complete_address}>
+                      {truncate(order.complete_address, 30)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs max-w-[140px]">
+                      {order.facebook_link ? (
+                        <a href={order.facebook_link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={e => e.stopPropagation()}>
+                          {truncate(order.facebook_link.replace(/^https?:\/\/(www\.)?/, ""), 22)}
+                        </a>
+                      ) : "-"}
+                    </TableCell>
+                    <TableCell>{order.order_product}</TableCell>
+                    <TableCell className="text-right">{order.order_quantity}</TableCell>
+                    <TableCell className="text-right font-medium">₱{(order.amount || 0).toLocaleString()}</TableCell>
+                    <TableCell><StatusBadge status={order.order_status} /></TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{order.mode_of_payment || "-"}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{order.order_source}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{order.team_department}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{order.agent_name}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs max-w-[160px]" title={order.agent_notes}>
+                      {truncate(order.agent_notes, 30)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs max-w-[160px]" title={order.admin_notes}>
+                      {truncate(order.admin_notes, 30)}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-xs max-w-[160px]" title={order.q_a_notes}>
+                      {truncate(order.q_a_notes, 30)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

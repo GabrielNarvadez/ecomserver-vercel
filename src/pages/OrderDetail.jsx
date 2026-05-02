@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
-import { ORDER_STATUSES, ORDER_SOURCES, TEAM_DEPARTMENTS } from "../lib/statusConfig";
+import { ORDER_STATUSES, ORDER_SOURCES, TEAM_DEPARTMENTS, PAYMENT_MODES } from "../lib/statusConfig";
 import moment from "moment";
 import { toast } from "sonner";
 
@@ -23,7 +23,7 @@ export default function OrderDetail() {
     order_day: new Date().toISOString().split("T")[0],
     ship_out_day: "",
     order_product: "", order_quantity: 1, amount: 0, order_type: "",
-    order_source: "", team_department: "", order_status: "NEW",
+    order_source: "", team_department: "", order_status: "NEW", mode_of_payment: "",
     agent_name: "", agent_facebook: "", agent_notes: "", admin_notes: "",
     q_a_notes: "",
     customer_id: "", edit_history: [], admin_name: "",
@@ -175,6 +175,17 @@ export default function OrderDetail() {
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ORDER_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.value}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Mode of Payment</Label>
+              <Select value={form.mode_of_payment || "none"} onValueChange={v => set("mode_of_payment", v === "none" ? "" : v)}>
+                <SelectTrigger className="h-9"><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Select...</SelectItem>
+                  {PAYMENT_MODES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PageHeader from "../components/PageHeader";
 import { toast } from "sonner";
@@ -21,6 +22,43 @@ export default function Products() {
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(blankForm);
+  const [selected, setSelected] = useState(new Set());
+
+  const toggleRow = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    setSelected(prev => {
+      const allOn = products.length > 0 && products.every(p => prev.has(p.id));
+      if (allOn) return new Set();
+      return new Set(products.map(p => p.id));
+    });
+  };
+  const clearSelection = () => setSelected(new Set());
+
+  const handleBulkDelete = async () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} product${ids.length > 1 ? "s" : ""}?`)) return;
+    await Promise.all(ids.map(id => base44.entities.Product.delete(id)));
+    toast.success(`Deleted ${ids.length} product${ids.length > 1 ? "s" : ""}`);
+    clearSelection();
+    load();
+  };
+
+  const handleBulkStatus = async (status) => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    await Promise.all(ids.map(id => base44.entities.Product.update(id, { status })));
+    toast.success(`Set ${ids.length} product${ids.length > 1 ? "s" : ""} to ${status}`);
+    clearSelection();
+    load();
+  };
 
   const load = () => base44.entities.Product.list("-created_date", 500).then(data => { setProducts(data); setLoading(false); });
 
@@ -98,11 +136,36 @@ export default function Products() {
         })}
       />
 
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-3 p-2.5 rounded-lg bg-secondary/70 border">
+          <span className="text-sm font-medium px-2">{selected.size} selected</span>
+          <Button size="sm" variant="outline" onClick={() => handleBulkStatus("Active")}>Set Active</Button>
+          <Button size="sm" variant="outline" onClick={() => handleBulkStatus("Inactive")}>Set Inactive</Button>
+          <Button size="sm" variant="destructive" className="gap-1.5" onClick={handleBulkDelete}>
+            <Trash2 className="h-3.5 w-3.5" /> Delete
+          </Button>
+          <Button size="sm" variant="ghost" onClick={clearSelection}>Clear</Button>
+        </div>
+      )}
+
       <div className="bg-card rounded-xl border overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-secondary/50">
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={
+                      products.length > 0 && products.every(p => selected.has(p.id))
+                        ? true
+                        : products.some(p => selected.has(p.id))
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all rows"
+                  />
+                </TableHead>
                 <TableHead>Product Name</TableHead>
                 <TableHead>SKU</TableHead>
                 <TableHead className="text-right">Price</TableHead>
@@ -114,11 +177,18 @@ export default function Products() {
             <TableBody>
               {products.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12">No products</TableCell>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-12">No products</TableCell>
                 </TableRow>
               ) : (
                 products.map(p => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} data-state={selected.has(p.id) ? "selected" : undefined} className="data-[state=selected]:bg-accent/60">
+                    <TableCell className="w-10">
+                      <Checkbox
+                        checked={selected.has(p.id) || false}
+                        onCheckedChange={() => toggleRow(p.id)}
+                        aria-label={`Select ${p.product_name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{p.product_name}</TableCell>
                     <TableCell className="text-muted-foreground font-mono text-xs">{p.sku}</TableCell>
                     <TableCell className="text-right font-medium">₱{(p.price || 0).toLocaleString()}</TableCell>
